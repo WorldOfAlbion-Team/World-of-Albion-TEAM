@@ -6,11 +6,11 @@ import { loadCommands } from "./handlers/commandHandler.js";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { allowedGuilds } from "./config/whitelist.js";
+import pg from "pg";
 
 // -----------------------------
-//  PostgreSQL CONNECTION
+//  PostgreSQL (Pool)
 // -----------------------------
-import pg from "pg";
 const { Pool } = pg;
 
 export const db = new Pool({
@@ -22,30 +22,39 @@ export const db = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// Test de conexión
-db.connect()
-    .then(() => console.log("🟢 PostgreSQL conectado correctamente."))
-    .catch(err => console.error("🔴 Error conectando PostgreSQL:", err));
+// -----------------------------
+//  Iniciar DB y crear tabla
+// -----------------------------
+async function initDatabase() {
+    try {
+        await db.connect();
+        console.log("🟢 PostgreSQL conectado correctamente.");
 
-// Crear tabla si no existe
-await db.query(`
-    CREATE TABLE IF NOT EXISTS guild_configs (
-        guild_id TEXT PRIMARY KEY,
-        channel_group TEXT,
-        channel_gold TEXT,
-        updated_at TIMESTAMP DEFAULT NOW()
-    );
-`).catch(err => console.error("❌ Error creando tabla:", err));
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS guild_configs (
+                guild_id TEXT NOT NULL,
+                tipo TEXT NOT NULL,
+                canal_embed TEXT,
+                categoria_voz TEXT,
+                updated_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (guild_id, tipo)
+            );
+        `);
 
+        console.log("📁 Tabla guild_configs lista.");
+    } catch (err) {
+        console.error("🔴 Error inicializando PostgreSQL:", err);
+    }
+}
 
 // -----------------------------
-//  SISTEMA EXISTENTE DE JSON
+//  Sistema existente JSON (compatibilidad)
 // -----------------------------
 const CONFIG_DIR = join(process.cwd(), "guild_configs");
 if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR);
 
 global.guildConfigs = {};
-console.log("📁 Configuraciones por servidor cargadas desde JSON");
+console.log("📁 Configuraciones locales cargadas desde JSON");
 
 
 // -----------------------------
@@ -64,7 +73,7 @@ client.commands = new Collection();
 
 
 // -----------------------------
-//  PROCESOS GLOBALES
+//  Errores globales
 // -----------------------------
 process.on("unhandledRejection", reason => {
     console.error("💥 Unhandled Rejection:", reason);
@@ -76,9 +85,11 @@ process.on("uncaughtException", err => {
 
 
 // -----------------------------
-//  INICIALIZACIÓN DEL BOT
+//  Inicialización del bot
 // -----------------------------
 (async () => {
+    await initDatabase();
+
     try {
         console.log("📦 Cargando comandos...");
         await loadCommands(client);
