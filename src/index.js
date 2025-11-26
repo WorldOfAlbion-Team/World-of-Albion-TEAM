@@ -5,21 +5,52 @@ import { loadEvents } from "./handlers/eventHandler.js";
 import { loadCommands } from "./handlers/commandHandler.js";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
-import { allowedGuilds } from "./config/whitelist.js"; // ✅ Importar whitelist
+import { allowedGuilds } from "./config/whitelist.js";
 
-// Crear carpeta de configuraciones si no existe
+// -----------------------------
+//  PostgreSQL CONNECTION
+// -----------------------------
+import pg from "pg";
+const { Pool } = pg;
+
+export const db = new Pool({
+    host: process.env.PGHOST,
+    user: process.env.PGUSER,
+    password: process.env.PGPASSWORD,
+    database: process.env.PGDATABASE,
+    port: process.env.PGPORT || 5432,
+    ssl: { rejectUnauthorized: false }
+});
+
+// Test de conexión
+db.connect()
+    .then(() => console.log("🟢 PostgreSQL conectado correctamente."))
+    .catch(err => console.error("🔴 Error conectando PostgreSQL:", err));
+
+// Crear tabla si no existe
+await db.query(`
+    CREATE TABLE IF NOT EXISTS guild_configs (
+        guild_id TEXT PRIMARY KEY,
+        channel_group TEXT,
+        channel_gold TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+    );
+`).catch(err => console.error("❌ Error creando tabla:", err));
+
+
+// -----------------------------
+//  SISTEMA EXISTENTE DE JSON
+// -----------------------------
 const CONFIG_DIR = join(process.cwd(), "guild_configs");
 if (!existsSync(CONFIG_DIR)) mkdirSync(CONFIG_DIR);
 
-// Errores globales
-process.on("unhandledRejection", (reason) => {
-    console.error("💥 Unhandled Rejection:", reason);
-});
+global.guildConfigs = {};
+console.log("📁 Configuraciones por servidor cargadas desde JSON");
 
-process.on("uncaughtException", (err) => {
-    console.error("💥 Uncaught Exception:", err);
-});
 
+// -----------------------------
+//  Discord Client
+// -----------------------------
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -31,10 +62,22 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// ✅ Cargar configuraciones previas (auto-carga)
-global.guildConfigs = {}; // por compatibilidad si usas memoria
-console.log("📁 Configuraciones por servidor cargadas desde JSON");
 
+// -----------------------------
+//  PROCESOS GLOBALES
+// -----------------------------
+process.on("unhandledRejection", reason => {
+    console.error("💥 Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", err => {
+    console.error("💥 Uncaught Exception:", err);
+});
+
+
+// -----------------------------
+//  INICIALIZACIÓN DEL BOT
+// -----------------------------
 (async () => {
     try {
         console.log("📦 Cargando comandos...");
@@ -48,28 +91,25 @@ console.log("📁 Configuraciones por servidor cargadas desde JSON");
 
         console.log("✅ Bot iniciado correctamente.");
     } catch (err) {
-        console.error("❌ Error iniciando el bot:");
-        console.error(err);
-        console.error(err?.stack);
+        console.error("❌ Error iniciando el bot:", err);
     }
 })();
 
-// ✅ BLOQUEO TOTAL - antes que cualquier handler
+
+// -----------------------------
+//  WHITELIST (bloqueo total)
+// -----------------------------
 client.on("interactionCreate", async interaction => {
     const guild = interaction.guild;
-    if (!guild) return; // DM o canal parcial
+    if (!guild) return;
 
     if (!allowedGuilds.includes(guild.id)) {
-        // Silencioso para el usuario, visible solo para él
-        if (interaction.isRepliable()) {
+        if (interaction.reply) {
             return interaction.reply({
                 content: "❌ Este servidor no está autorizado para usar el bot.",
-                flags: [64] // ephemeral
+                ephemeral: true
             }).catch(() => {});
         }
-        return; // ➜ no continúa NADA más
+        return;
     }
-
-    // ➜ Si está autorizado, continúa con handlers posteriores
 });
-import '../server.js';
