@@ -1,0 +1,23 @@
+{
+  "name": "world-of-albion-bot",
+  "version": "1.0.0",
+  "description": "Bot de Discord para World of Albion",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node deploy-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "albion"
+  ],
+  "author": "World of Albion",
+  "license": "MIT"
+}
