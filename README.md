@@ -4,7 +4,7 @@ Bot de Discord para **organizar grupos y eventos** en **Albion Online**.
 
 ## 🚀 Características
 
-- ✅ Sistema de eventos (Dorados, Zona Abierta)
+- ✅ Sistema de eventos (Dorados, Zona Abierta, Avas, Cta, Arenas, etc)
 - ✅ Roles con selectores interactivos
 - ✅ Canales de voz automáticos
 - ✅ Whitelist de servidores
