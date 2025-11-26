@@ -1,0 +1,20 @@
+FROM node:20-alpine
+WORKDIR /app
+
+# Copia archivos de dependencias
+COPY package*.json ./
+
+# Instala dependencias
+RUN npm ci --only=production
+
+# Copia todo el código
+COPY . .
+
+# Hace ejecutable el script de arranque
+RUN chmod +x start.sh
+
+# Puerto que Render asigna
+EXPOSE 3000
+
+# Comando de arranque
+CMD ["./start.sh"]
