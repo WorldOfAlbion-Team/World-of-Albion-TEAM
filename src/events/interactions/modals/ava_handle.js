@@ -38,7 +38,7 @@ export default async function (interaction) {
         new StringSelectMenuBuilder()
             .setCustomId("ava_add_category")
             .setPlaceholder("Añadir Roles por Categoría...")
-            .addOptions(Object.keys(WEAPONS_DICT).map(cat => ({ label: cat, value: cat })))
+            .addOptions(Object.keys(WEAPONS_DICT).slice(0, 25).map(cat => ({ label: cat, value: cat })))
     );
 
     const rowBotones = new ActionRowBuilder().addComponents(

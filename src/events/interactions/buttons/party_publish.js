@@ -199,6 +199,35 @@ export default async function (interaction) {
             components: [rowSelect, rowBotones] 
         });
 
+        // ── NUEVO: Hilo de coordinación ─────────────────────────────────────────────
+        try {
+            const hilo = await message.startThread({
+                name: `💬 ${config.titulo.toUpperCase()} — Coordinación`,
+                autoArchiveDuration: 1440,
+                reason: `Hilo de coordinación para ${config.titulo}`
+            });
+            await hilo.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle(`💬 Hilo de Coordinación`)
+                        .setColor("#45b7d1")
+                        .setDescription(
+                            `> 👑 **Líder:** <@${config.creatorId}>\n` +
+                            `> 🛡️ **Tier:** \`${config.tier}\`\n` +
+                            `> 📍 **Lugar:** ${config.lugar}\n` +
+                            `> ⏰ **Hora:** \`${config.hora}\`\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `Usa este hilo para coordinar con tu equipo antes del evento.`
+                        )
+                        .setFooter({ text: "World of Albion • Party Personalizada" })
+                        .setTimestamp()
+                ]
+            });
+        } catch (threadErr) {
+            log.error("Error creando hilo party:", threadErr);
+        }
+        // ── FIN HILO ────────────────────────────────────────────────────────────────
+
         // Guardar en base de datos
         const rolesData = Array.from(config.participantes.entries()).map(([userId, p]) => ({
             userId,

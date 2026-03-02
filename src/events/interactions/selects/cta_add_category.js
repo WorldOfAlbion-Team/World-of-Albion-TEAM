@@ -11,11 +11,11 @@ export default async function (interaction) {
     }
 
     const categoria = interaction.values[0];
-    const opciones = Object.entries(WEAPONS_DICT[categoria] || {}).map(([key, info]) => ({
+    const opciones = Object.entries(WEAPONS_DICT[categoria] || {}).slice(0, 25).map(([key, info]) => ({
         label: info.label,
         value: `${categoria}_${key}`,
         emoji: info.emoji
-    }));
+    }))
 
     // Crear embed actualizado
     const embed = interaction.message.embeds[0];

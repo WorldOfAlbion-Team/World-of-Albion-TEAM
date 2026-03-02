@@ -167,6 +167,36 @@ export default async function (interaction) {
     try {
         const message = await targetChannel.send({ content: "@everyone", embeds: [embedFinal], components: [rowSelect, rowBtns] });
         
+        // ── NUEVO: Crear hilo de coordinación ──────────────────────────────────────
+        try {
+            const hilo = await message.startThread({
+                name: `💬 ${data.titulo.toUpperCase()} — Coordinación`,
+                autoArchiveDuration: 1440, // 24 horas
+                reason: `Hilo de coordinación para ${data.titulo}`
+            });
+            await hilo.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle(`💬 Hilo de Coordinación`)
+                        .setColor("#9b59b6")
+                        .setDescription(
+                            `> 👑 **Líder:** <@${interaction.user.id}>\n` +
+                            `> 🛡️ **Tier:** \`${data.tier}\`\n` +
+                            `> 📍 **Lugar:** ${data.lugar}\n` +
+                            `> ⏰ **Hora:** \`${data.hora}\`\n` +
+                            `━━━━━━━━━━━━━━━━━━━━━━\n` +
+                            `Usa este hilo para coordinar builds, estrategias y comunicarte con tu equipo.`
+                        )
+                        .setFooter({ text: "World of Albion • Hilo de Party" })
+                        .setTimestamp()
+                ]
+            });
+        } catch (threadErr) {
+            log.error("Error creando hilo AVA:", threadErr);
+            // No bloquear si falla el hilo
+        }
+        // ── FIN HILO ────────────────────────────────────────────────────────────────
+        
         // Guardar evento en la base de datos
         await saveAvaEvent(
             message.id,

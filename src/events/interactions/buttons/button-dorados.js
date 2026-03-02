@@ -128,6 +128,8 @@ export default async function (interaction) {
                 flags: MessageFlags.Ephemeral 
             });
         }
+        
+        await interaction.deferUpdate();
 
         try {
             const logChannelId = await getLogChannel(interaction.guild.id);
@@ -168,7 +170,7 @@ export default async function (interaction) {
         activeEvents.delete(eventId);
 
         log.interaction('button', `dorados-cerrar`);
-        return interaction.update({ 
+        return interaction.editReply({ 
             content: "🔒 Party de Dorados finalizada y registros limpiados.", 
             embeds: [], 
             components: [] 

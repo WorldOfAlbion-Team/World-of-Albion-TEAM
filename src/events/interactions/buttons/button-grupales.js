@@ -130,6 +130,8 @@ export default async function (interaction) {
                 flags: MessageFlags.Ephemeral 
             });
         }
+        
+        await interaction.deferUpdate();
 
         try {
             const logChannelId = await getLogChannel(interaction.guild.id);
@@ -171,7 +173,7 @@ export default async function (interaction) {
         activeEvents.delete(eventId);
 
         log.interaction('button', `grupales-cerrar`);
-        return interaction.update({ 
+        return interaction.editReply({ 
             content: `🔒 Party ${event.titulo.toUpperCase()} finalizada y registros limpiados.`, 
             embeds: [], 
             components: [] 

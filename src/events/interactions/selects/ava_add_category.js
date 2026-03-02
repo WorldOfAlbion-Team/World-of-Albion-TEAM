@@ -19,7 +19,7 @@ export default async function (interaction) {
     const selectArmas = new StringSelectMenuBuilder()
         .setCustomId("ava_add_weapon")
         .setPlaceholder(`Elige un arma de ${categoriaElegida}...`)
-        .addOptions(armas.map(arma => ({
+        .addOptions(armas.slice(0, 25).map(arma => ({
             label: arma.label,
             value: `${categoriaElegida}|${arma.value}`,
             emoji: arma.emoji
