@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: world-of-albion-team
+    env: node
+    buildCommand: npm install && npm run deploy
+    startCommand: npm start
