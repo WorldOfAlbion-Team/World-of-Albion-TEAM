@@ -51,7 +51,10 @@ const BUTTON_HANDLERS = {
     'ava_cancel':               { file: 'ava_cancel.js' },
     'ava_undo':                 { file: 'ava_undo.js' },
     'unirse_ava_select':        { type: 'selects', file: 'unirse_ava_select.js' },
-    'unirse_party_select':      { type: 'selects', file: 'unirse_party_select.js' },
+    // party join menus use a dynamic suffix (voice channel or config id),
+    // so the prefix must match the start of the customId rather than
+    // the literal string "unirse_party_select".
+    'unirse_party':             { type: 'selects', file: 'unirse_party_select.js' },
     'seleccionar_arma':         { type: 'selects', file: 'seleccionar_arma.js' },
     'arma_':                    { type: 'selects', file: 'arma_select.js' },
     'select_eliminar_plantilla':{ type: 'selects', file: 'plantilla_eliminar_handle.js' },
