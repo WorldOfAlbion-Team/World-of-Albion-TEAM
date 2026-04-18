@@ -8,12 +8,14 @@ import { loadEvents } from "./handlers/eventHandler.js";
 import { logger } from "./utils/logger.js";
 
 const TOKEN = process.env.DISCORD_TOKEN;
+const GUILD_ID = "1417511080091062347"; // ✅ TU SERVER ID
+
 if (!TOKEN) throw new Error("❌ Falta DISCORD_TOKEN en las variables de entorno");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Health-check inmediato para Render
+// Health-check para Render
 app.get("/", (_, res) => res.status(200).send("✅ World Of Albion BOT ONLINE"));
 app.get("/health", (_, res) => res.status(200).json({ status: "ok" }));
 
@@ -23,30 +25,53 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.DirectMessages, // Necesario para recibir MDs de soporte
-    GatewayIntentBits.MessageContent, // Necesario para leer el contenido de los MDs
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates
   ],
-  partials: [Partials.Channel, Partials.Message] // Requerido para MDs con usuarios nuevos
+  partials: [Partials.Channel, Partials.Message]
 });
 
 client.commands = new Collection();
 
-// Usamos Events.ClientReady que es la forma recomendada en discord.js v14
-client.once(Events.ClientReady, async (c) => {
+client.once(Events.ClientReady, async () => {
   try {
     logger.info(`🤖 Conectado como ${client.user.tag}`);
     
-    // Intentar inicializar base de datos (opcional para modo de prueba local)
+    // Base de datos
     try {
       await initDatabase();
     } catch (dbError) {
-      logger.warn("⚠️  Base de datos no disponible - funcionando en modo de prueba sin persistencia");
+      logger.warn("⚠️ Base de datos no disponible - modo prueba");
     }
-    
+
+    // Cargar comandos y eventos
     await loadCommands(client);
     await loadEvents(client);
+
+    // 🔥 LIMPIAR comandos antiguos (solo esta vez es clave)
+    logger.info("🧹 Limpiando comandos antiguos...");
+    await client.application.commands.set([], GUILD_ID);
+
+    // 🔥 REGISTRAR comandos en Discord
+    logger.info("📡 Registrando comandos en Discord...");
+
+    const commands = [];
+
+    client.commands.forEach(cmd => {
+      if (!cmd.name) return;
+
+      commands.push({
+        name: cmd.name,
+        description: cmd.description || "Sin descripción"
+      });
+    });
+
+    await client.application.commands.set(commands, GUILD_ID);
+
+    logger.info(`✅ ${commands.length} comandos registrados correctamente`);
     logger.info("🚀 Bot totalmente inicializado y operativo");
+
   } catch (err) {
     logger.error("❌ Error durante la inicialización:");
     console.error(err);
@@ -54,13 +79,13 @@ client.once(Events.ClientReady, async (c) => {
   }
 });
 
-// Prevenir crashes por errores no capturados
-process.on('unhandledRejection', (error) => {
-  logger.error('❌ unhandledRejection:', error);
+// Manejo de errores globales
+process.on("unhandledRejection", (error) => {
+  logger.error("❌ unhandledRejection:", error);
 });
 
-process.on('uncaughtException', (error) => {
-  logger.error('❌ uncaughtException:', error);
+process.on("uncaughtException", (error) => {
+  logger.error("❌ uncaughtException:", error);
 });
 
 client.login(TOKEN);
