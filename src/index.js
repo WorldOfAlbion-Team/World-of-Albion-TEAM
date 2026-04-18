@@ -8,7 +8,6 @@ import { loadEvents } from "./handlers/eventHandler.js";
 import { logger } from "./utils/logger.js";
 
 const TOKEN = process.env.DISCORD_TOKEN;
-const GUILD_ID = "1417511080091062347"; // ✅ TU SERVER ID
 
 if (!TOKEN) throw new Error("❌ Falta DISCORD_TOKEN en las variables de entorno");
 
@@ -41,35 +40,15 @@ client.once(Events.ClientReady, async () => {
     // Base de datos
     try {
       await initDatabase();
+      logger.info("✅ PostgreSQL inicializado");
     } catch (dbError) {
       logger.warn("⚠️ Base de datos no disponible - modo prueba");
     }
 
-    // Cargar comandos y eventos
+    // Cargar comandos y eventos (SOLO carga, NO registra)
     await loadCommands(client);
     await loadEvents(client);
 
-    // 🔥 LIMPIAR comandos antiguos (solo esta vez es clave)
-    logger.info("🧹 Limpiando comandos antiguos...");
-    await client.application.commands.set([], GUILD_ID);
-
-    // 🔥 REGISTRAR comandos en Discord
-    logger.info("📡 Registrando comandos en Discord...");
-
-    const commands = [];
-
-    client.commands.forEach(cmd => {
-      if (!cmd.name) return;
-
-      commands.push({
-        name: cmd.name,
-        description: cmd.description || "Sin descripción"
-      });
-    });
-
-    await client.application.commands.set(commands, GUILD_ID);
-
-    logger.info(`✅ ${commands.length} comandos registrados correctamente`);
     logger.info("🚀 Bot totalmente inicializado y operativo");
 
   } catch (err) {
