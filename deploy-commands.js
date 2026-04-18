@@ -21,6 +21,7 @@ const commandsPath = path.resolve("./src/commands");
 
 async function loadCommands(folderPath) {
   const items = readdirSync(folderPath);
+
   for (const item of items) {
     const fullPath = path.join(folderPath, item);
     const stat = statSync(fullPath);
@@ -34,9 +35,17 @@ async function loadCommands(folderPath) {
         const mod = await import(fileUrl);
 
         if (mod.default?.data) {
-          commands.push(mod.default.data.toJSON());
-          console.log(`✔ ${mod.default.data.name}`);
+          const json = mod.default.data.toJSON();
+
+          // 🔥 evita duplicados
+          if (!commands.find(c => c.name === json.name)) {
+            commands.push(json);
+            console.log(`✔ ${json.name}`);
+          } else {
+            console.log(`⚠️ duplicado ignorado: ${json.name}`);
+          }
         }
+
       } catch (err) {
         console.error(`❌ Error en ${item}:`, err);
       }
@@ -51,22 +60,29 @@ async function deploy() {
     console.log("📥 Cargando comandos...");
     await loadCommands(commandsPath);
 
-    // 🧹 Limpieza TOTAL del servidor
+    // 🧨 LIMPIEZA GLOBAL (esto era lo que te faltaba)
+    console.log("🧨 Eliminando comandos GLOBAL...");
+    await rest.put(
+      Routes.applicationCommands(CLIENT_ID),
+      { body: [] }
+    );
+
+    // 🧹 LIMPIEZA GUILD
     console.log("🧹 Limpiando comandos del servidor...");
     await rest.put(
       Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: [] }
     );
 
-    // 🚀 Registro INSTANTÁNEO en el servidor
-    console.log(`🚀 Registrando ${commands.length} comandos en el servidor...`);
+    // 🚀 REGISTRO FINAL
+    console.log(`🚀 Registrando ${commands.length} comandos...`);
     await rest.put(
       Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: commands }
     );
 
-    console.log("✅ Comandos actualizados INSTANTÁNEAMENTE");
-    console.log("💡 Escribe / en Discord ahora mismo");
+    console.log("✅ Sistema limpio y sincronizado");
+    console.log("💡 Escribe / en Discord ahora");
 
   } catch (error) {
     console.error("❌ Error:", error);
