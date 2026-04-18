@@ -9,10 +9,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env; // Agregué GUILD_ID para la limpieza
+const { DISCORD_TOKEN, CLIENT_ID, GUILD_ID } = process.env;
 
-if (!DISCORD_TOKEN || !CLIENT_ID) {
-  console.error("❌ ERROR: Faltan variables (DISCORD_TOKEN o CLIENT_ID)");
+if (!DISCORD_TOKEN || !CLIENT_ID || !GUILD_ID) {
+  console.error("❌ Faltan variables (DISCORD_TOKEN, CLIENT_ID, GUILD_ID)");
   process.exit(1);
 }
 
@@ -24,15 +24,18 @@ async function loadCommands(folderPath) {
   for (const item of items) {
     const fullPath = path.join(folderPath, item);
     const stat = statSync(fullPath);
+
     if (stat.isDirectory()) {
       await loadCommands(fullPath);
     } else if (item.endsWith(".js")) {
       const fileUrl = pathToFileURL(fullPath).href;
+
       try {
         const mod = await import(fileUrl);
+
         if (mod.default?.data) {
           commands.push(mod.default.data.toJSON());
-          console.log(`✔ Cargado: ${mod.default.data.name}`);
+          console.log(`✔ ${mod.default.data.name}`);
         }
       } catch (err) {
         console.error(`❌ Error en ${item}:`, err);
@@ -48,21 +51,22 @@ async function deploy() {
     console.log("📥 Cargando comandos...");
     await loadCommands(commandsPath);
 
-    // --- PASO 1: LIMPIEZA DE DUPLICADOS ---
-    if (GUILD_ID) {
-        console.log("🧹 Borrando comandos antiguos del servidor de pruebas...");
-        await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
-    }
-
-    // --- PASO 2: DESPLIEGUE GLOBAL ---
-    console.log(`🚀 Desplegando ${commands.length} comandos GLOBALMENTE...`);
+    // 🧹 Limpieza TOTAL del servidor
+    console.log("🧹 Limpiando comandos del servidor...");
     await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
+      { body: [] }
+    );
+
+    // 🚀 Registro INSTANTÁNEO en el servidor
+    console.log(`🚀 Registrando ${commands.length} comandos en el servidor...`);
+    await rest.put(
+      Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID),
       { body: commands }
     );
 
-    console.log("✅ ¡ÉXITO! Solo deberías ver 1 versión de cada comando ahora.");
-    console.log("💡 Si aún ves dos, reinicia tu Discord (CTRL + R).");
+    console.log("✅ Comandos actualizados INSTANTÁNEAMENTE");
+    console.log("💡 Escribe / en Discord ahora mismo");
 
   } catch (error) {
     console.error("❌ Error:", error);
